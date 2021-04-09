@@ -4,7 +4,7 @@ BD = build/
 
 OF = bin/sc
 
-OBJS = $(BD)main.o $(BD)sc_memory_reg.o $(BD)sc_terminal.o $(BD)sc_bigchar.o $(BD)sc_readkey.o
+OBJS = $(BD)main.o $(BD)sc_memory_reg.o $(BD)sc_terminal.o $(BD)sc_bigchar.o $(BD)sc_readkey.o $(BD)SimpleComputer.o
 
 .PHONY: all clean re
 
@@ -25,6 +25,9 @@ $(BD)sc_bigchar.o: $(SD)sc_bigchar.c
 	gcc $^ -I include -c -o $@
 
 $(BD)sc_readkey.o: $(SD)sc_readkey.c
+	gcc $^ -I include -c -o $@
+
+$(BD)SimpleComputer.o: $(SD)SimpleComputer.c
 	gcc $^ -I include -c -o $@
 
 $(OF): $(OBJS)

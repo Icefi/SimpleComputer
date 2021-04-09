@@ -139,7 +139,8 @@ int bc_read (int fd, int* big_char, int need_count, int* count)
     cnt = read (fd, big_char, 2 * need_count * sizeof (int));
     if (cnt == -1) return 0;
 
-    *count = cnt / (2 * sizeof(int));
+    if (count != NULL)
+        *count = cnt / (2 * sizeof(int));
 
     return 1;
 }

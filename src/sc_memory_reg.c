@@ -4,20 +4,12 @@
 
 /* MEMORY CONTROLLER */
 
-int* sc_mem;
+int sc_mem [100];
 
 int sc_memory_init ()
 {
-	sc_mem = (int*) malloc (100 * sizeof (int));
-
-	if (sc_mem == NULL) {
-		sc_reg_set (M, 1);
-		return 0;
-	}
-
 	for (int i = 0; i < 100; i++) sc_mem[i] = 0;
 
-	//printf ("Memory erased!\n");
 	return 1;
 }
 
@@ -25,11 +17,9 @@ int sc_memory_set (int address, int value)
 {
 	if ((address > 100) || (address < 0)) {
 		printf ("\nError: address %d is not available\n", address);
-		sc_reg_set (M, 1);
 		return 0;
 	} else {
 		*(sc_mem + address) = value;
-		//printf ("Cell 0x%x is now %d\n", address, sc_mem[address]);
 		return 1;
 	}
 }
@@ -38,11 +28,9 @@ int sc_memory_get (int address, int* value)
 {
 	if ((address > 100) || (address < 0)) {
 		printf ("Error: address %d is not available\n", address);
-		sc_reg_set (M, 1);
 		return 0;
 	} else {
 		if (value != NULL) *value = *(sc_mem + address);
-		
 		return 1;
 	}
 }
@@ -50,6 +38,8 @@ int sc_memory_get (int address, int* value)
 int sc_memory_save (const char* file_name)
 {
 	FILE* file = fopen (file_name, "w");
+
+	if (!file) return 0;
 
 	int res = fwrite (sc_mem, sizeof(int), 100, file);
 
@@ -67,11 +57,11 @@ int sc_memory_load (const char* file_name)
 {
 	FILE* file = fopen (file_name, "rb");
 
+	if (!file) return 0;
+
 	int res = fread (sc_mem, sizeof (int), 100, file);
 
 	fclose (file);
-
-	//printf ("Loading...\nFinished!\n");
 
 	if (res != 100) {
 		sc_reg_set (M, 1);
@@ -80,6 +70,7 @@ int sc_memory_load (const char* file_name)
 		return 1;
 	}
 }
+
 
 
 /* REGISTER CONTROLLER */
