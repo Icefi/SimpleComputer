@@ -15,6 +15,7 @@ struct SimpleComputer
 {
 	int accumulator;
 	int instruction_counter;
+	
 	int should_close;
 
 	int cursor_x;
@@ -24,7 +25,6 @@ struct SimpleComputer
 int SimpleComputer_init  ();
 
 void SimpleComputer_print ();
-void SimpleComputer_test ();
 
 void SimpleComputer_load ();
 void SimpleComputer_save ();
@@ -34,9 +34,9 @@ void SimpleComputer_move (enum keys direction);
 void SimpleComputer_show ();
 void SimpleComputer_do   ();
 
-void SimpleComputer_r ();
+void SimpleComputer_run ();
 
 void SimpleComputer_reset  (int signo);
 void instructionCounterAdd (int signo);
 
-void SimpleComputer_run ();
+void SimpleComputer_runapp ();

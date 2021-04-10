@@ -33,36 +33,6 @@ void SimpleComputer_print ()
 	printf ("\n");
 }
 
-void SimpleComputer_test ()
-{
-	int bc_0    [2] = { (255 << 24) + (129 << 16) + (129 << 8) + 129,   (129 << 24) + (129 << 16) + (129 << 8) + 255 };
-    int bc_1    [2] = { (  1 << 24) + (1   << 16) + (  1 << 8) +   1,     (1 << 24) + (1   << 16) + (1   << 8 )+   1 };
-    int bc_2    [2] = { (255 << 24) + (1   << 16) + (  1 << 8) + 255,   (128 << 24) + (128 << 16) + (128 << 8 )+ 255 };
-    int bc_3    [2] = { (255 << 24) + (1   << 16) + (  1 << 8) + 255,     (1 << 24) + (1   << 16) + (1   << 8) + 255 };
-    int bc_4    [2] = { (129 << 24) + (129 << 16) + (129 << 8) + 255,     (1 << 24) + (1   << 16) + (1   << 8) +   1 };
-    int bc_5    [2] = { (255 << 24) + (128 << 16) + (128 << 8) + 255,     (1 << 24) + (1   << 16) + (1   << 8) + 255 };
-    int bc_6    [2] = { (255 << 24) + (128 << 16) + (128 << 8) + 255,   (129 << 24) + (129 << 16) +( 129 << 8) + 255 };
-    int bc_7    [2] = { (255 << 24) + (1   << 16) + (  1 << 8) +  16,     (1 << 24) + (1   << 16) + (1   << 8) +   1 };
-    int bc_8    [2] = { (255 << 24) + (129 << 16) + (129 << 8) + 255,   (129 << 24) + (129 << 16) + (129 << 8) + 255 };
-    int bc_9    [2] = { (255 << 24) + (129 << 16) + (129 << 8) + 255,     (1 << 24) + (1   << 16) + (1   << 8) +   1 };
-    int bc_plus [2] = { (24  << 24) + (24  << 16) + ( 24 << 8) + 255,   (255 << 24) + (24  << 16) +  (24 << 8) +  24 };
-
-    bc_write (open ("res/bigchar/bc_0.bin", O_WRONLY), bc_0, 1);
-    bc_write (open ("res/bigchar/bc_1.bin", O_WRONLY), bc_1, 1);
-    bc_write (open ("res/bigchar/bc_2.bin", O_WRONLY), bc_2, 1);
-    bc_write (open ("res/bigchar/bc_3.bin", O_WRONLY), bc_3, 1);
-    bc_write (open ("res/bigchar/bc_4.bin", O_WRONLY), bc_4, 1);
-    bc_write (open ("res/bigchar/bc_5.bin", O_WRONLY), bc_5, 1);
-    bc_write (open ("res/bigchar/bc_6.bin", O_WRONLY), bc_6, 1);
-    bc_write (open ("res/bigchar/bc_7.bin", O_WRONLY), bc_7, 1);
-    bc_write (open ("res/bigchar/bc_8.bin", O_WRONLY), bc_8, 1);
-    bc_write (open ("res/bigchar/bc_9.bin", O_WRONLY), bc_9, 1);
-    bc_write (open ("res/bigchar/bc_plus.bin",O_WRONLY), bc_plus, 1);
-
-	printf ("HI\n");
-	sleep (1);
-}
-
 void SimpleComputer_load ()
 {
 	int cur; sc_reg_get (T, &cur);
@@ -72,6 +42,7 @@ void SimpleComputer_load ()
 	
 	mt_gotoXY (1, 23); printf ("Enter file address:\n");
 	
+	fflush (stdin);
 	fgets (file_name, 255, stdin);
 
 	if (sc_memory_load (file_name))
@@ -94,6 +65,7 @@ void SimpleComputer_save ()
 	rk_mytermregime (1, 0, 1, 1, 1);
 	mt_gotoXY (1, 23); printf ("\nEnter file address: ");
 
+	fflush (stdin);
 	fgets (file_name, 255, stdin);
 
 	sc_memory_save (file_name);
@@ -136,8 +108,6 @@ int SimpleComputer_init ()
 	}
 
 	sc_reg_set (T, 1);
-
-	sc_memory_set (45, 3534);
 	
 	/* set default variables */
 	SC.cursor_x = 1;
@@ -167,11 +137,11 @@ void SimpleComputer_exit ()
 
 void SimpleComputer_reset (int signo)
 {
-	//alarm (0);
-
 	if (!sc_memory_init ()) return;
 	if (!sc_reg_init    ()) return;
 
+	sc_reg_set (T, 1);
+	
 	SC.accumulator         = 0;
 	SC.instruction_counter = 0;
 }
@@ -179,8 +149,6 @@ void SimpleComputer_reset (int signo)
 void SimpleComputer_move (enum keys direction)
 {
 	int d_x = 0, d_y = 0;
-
-	SC.accumulator = 8976;
 
 	switch (direction) {
 		case rk_left:
@@ -200,13 +168,36 @@ void SimpleComputer_move (enum keys direction)
 	SC.cursor_x += d_x;
 	SC.cursor_y += d_y;
 
-	if (SC.cursor_x <  1) SC.cursor_x =  1;
-	if (SC.cursor_x > 10) SC.cursor_x = 10;
-	if (SC.cursor_y <  1) SC.cursor_y =  1;
-	if (SC.cursor_y > 10) SC.cursor_y = 10;
+	if (SC.cursor_x <  1) SC.cursor_x = 10;
+	if (SC.cursor_x > 10) SC.cursor_x =  1;
+	if (SC.cursor_y <  1) SC.cursor_y = 10;
+	if (SC.cursor_y > 10) SC.cursor_y =  1;
 }
 
-void SimpleComputer_r ()
+void SimpleComputer_ChangeCell ()
+{
+	int temp = 0;
+	printf ("Enter new value >> ");
+	scanf ("%d", &temp);
+	sc_memory_set ((SC.cursor_y - 1) * 10 + SC.cursor_x - 1, temp);
+	fflush (stdin);
+}
+
+void SimpleComputer_accumulator ()
+{
+	printf ("Enter new value of accumulator >> ");
+	scanf ("%d", &SC.accumulator);
+	fflush (stdin);
+}
+
+void SimpleComputer_instrCounter ()
+{
+	printf ("Enter new value of Instruction Counter >> ");
+	scanf ("%d", &SC.instruction_counter);
+	fflush (stdin);
+}
+
+void SimpleComputer_run ()
 {
 	int key;
 	sc_reg_get (T, &key);
@@ -241,7 +232,7 @@ void SimpleComputer_show ()
 
 	/* printing menu values */
 
-	mt_gotoXY (64, 2); printf ("%20d", SC.should_close);
+	mt_gotoXY (64, 2); printf ("%20d", SC.accumulator);
 	mt_gotoXY (64, 5); printf ("%20d", SC.instruction_counter);
 
 	/* printing flags */
@@ -255,10 +246,10 @@ void SimpleComputer_show ()
 	sc_reg_get (E, &SC_T);
 
 	mt_gotoXY (68, 11); if (SC_P) printf ("P\n");
-	mt_gotoXY (69, 11); if (SC_O) printf ("O\n");
-	mt_gotoXY (70, 11); if (SC_M) printf ("M\n");
-	mt_gotoXY (71, 11); if (SC_T) printf ("T\n");
-	mt_gotoXY (72, 11); if (SC_E) printf ("E\n");
+	mt_gotoXY (70, 11); if (SC_O) printf ("O\n");
+	mt_gotoXY (72, 11); if (SC_M) printf ("M\n");
+	mt_gotoXY (74, 11); if (SC_T) printf ("T\n");
+	mt_gotoXY (76, 11); if (SC_E) printf ("E\n");
 
 	/* printing screen widget */
 
@@ -303,10 +294,27 @@ void SimpleComputer_do ()
 	
 	switch (K) {
 		case rk_r:
-			SimpleComputer_r ();
+			SimpleComputer_run ();
 			break;
+
 		case rk_e:
-			SimpleComputer_exit  ();
+			SimpleComputer_exit ();
+			break;
+
+		case rk_left:
+			SimpleComputer_move (rk_left);
+			break;
+
+		case rk_right:
+			SimpleComputer_move (rk_right);
+			break;
+
+		case rk_up:
+			SimpleComputer_move (rk_up);
+			break;
+
+		case rk_down:
+			SimpleComputer_move (rk_down);
 			break;
 	}
 
@@ -316,25 +324,26 @@ void SimpleComputer_do ()
 		case rk_l:
 			SimpleComputer_load  ();
 			break;
+
 		case rk_s:
 			SimpleComputer_save  ();
 			break;
+
+		case rk_enter:
+			SimpleComputer_ChangeCell ();
+			break;
+
+		case rk_f5:
+			SimpleComputer_accumulator ();
+			break;
+
+		case rk_f6:
+			SimpleComputer_instrCounter ();
+			break;
+
 		case rk_i:
 			raise (SIGUSR1);
 			break;
-		case rk_left:
-			SimpleComputer_move (rk_left);
-			break;
-		case rk_right:
-			SimpleComputer_move (rk_right);
-			break;
-		case rk_up:
-			SimpleComputer_move (rk_up);
-			break;
-		case rk_down:
-			SimpleComputer_move (rk_down);
-			break;
-		
 	}
 }
 
@@ -348,7 +357,7 @@ void instructionCounterAdd (int signo)
 
 }
 
-void SimpleComputer_run ()
+void SimpleComputer_runapp ()
 {
 	struct itimerval nval, oval;
 	signal (SIGALRM, instructionCounterAdd);
@@ -361,11 +370,7 @@ void SimpleComputer_run ()
 
 	setitimer (ITIMER_REAL, &nval, &oval);
 
-	int key;
-	while (1) {
-
-		if (SC.should_close == 1) break;
-
+	while (SC.should_close == 0) {
 		SimpleComputer_show ();
 		SimpleComputer_do ();
 	}

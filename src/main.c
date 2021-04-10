@@ -4,8 +4,7 @@ int main ()
 {
 	SimpleComputer_init ();
 
-	//SimpleComputer_test ();	
-	SimpleComputer_run ();
+	SimpleComputer_runapp ();
 
 	return 0;
 }

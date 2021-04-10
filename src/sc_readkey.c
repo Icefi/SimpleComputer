@@ -23,8 +23,8 @@ int rk_readkey (enum keys* key)
   	else if (strcmp (buf, " "     ) == 0) *key = rk_space;
   	else if (strcmp (buf, "\n"    ) == 0) *key = rk_enter;
 
-    else if (strcmp (buf, "\e[15~") == 0) *key = rk_f5;
-    else if (strcmp (buf, "\e[17~") == 0) *key = rk_f6;
+    else if (strcmp (buf, "5") == 0) *key = rk_f5;
+    else if (strcmp (buf, "6") == 0) *key = rk_f6;
 
     else if (strcmp (buf, "u") == 0) *key = rk_up;
     else if (strcmp (buf, "j") == 0) *key = rk_down;
