@@ -1,5 +1,7 @@
 #include "SimpleComputer.h"
 
+/* application functions */
+
 struct SimpleComputer SC;
 
 int bc_num [10][2];
@@ -15,10 +17,10 @@ void SimpleComputer_print ()
 
 			mt_gotoXY (2 + j * 6, 2 + i);
 
-			if (((i + 1) == SC.cursor_y) && ((j + 1) == SC.cursor_x)) {
+			if (SC.instruction_counter == (i * 10 + j)) {
 
-				mt_setfgcolor (white);
-				mt_setbgcolor (black);
+				mt_setfgcolor (black);
+				mt_setbgcolor (white);
 				printf ("+%d%d%d%d ", temp / 1000 % 10, temp / 100 % 10, temp / 10 % 10, temp % 10);
 				mt_restorecolors ();
 
@@ -39,11 +41,14 @@ void SimpleComputer_load ()
 	sc_reg_set (T, 1);
 
 	char file_name [255];
-	
+
 	mt_gotoXY (1, 23); printf ("Enter file address:\n");
-	
+
 	fflush (stdin);
 	fgets (file_name, 255, stdin);
+
+	for (int i = 0; i < 255; i++)
+		if (file_name[i] == '\n') file_name[i] = '\0';
 
 	if (sc_memory_load (file_name))
 		printf ("Loading...\n");
@@ -61,12 +66,15 @@ void SimpleComputer_save ()
 	sc_reg_set (T, 1);
 
 	char file_name [255];
-	
+
 	rk_mytermregime (1, 0, 1, 1, 1);
 	mt_gotoXY (1, 23); printf ("\nEnter file address: ");
 
 	fflush (stdin);
 	fgets (file_name, 255, stdin);
+
+	for (int i = 0; i < 255; i++)
+		if (file_name[i] == '\n') file_name[i] = '\0';
 
 	sc_memory_save (file_name);
 
@@ -74,7 +82,7 @@ void SimpleComputer_save ()
 		printf ("Saving...\n");
 	else
 		printf ("File does not exist!\n");
-	
+
 	sleep (1);
 
 	sc_reg_set (T, cur);
@@ -108,10 +116,8 @@ int SimpleComputer_init ()
 	}
 
 	sc_reg_set (T, 1);
-	
+
 	/* set default variables */
-	SC.cursor_x = 1;
-	SC.cursor_y = 1;
 	SC.accumulator         = 0;
 	SC.instruction_counter = 0;
 	SC.should_close        = 0;
@@ -141,11 +147,12 @@ void SimpleComputer_reset (int signo)
 	if (!sc_reg_init    ()) return;
 
 	sc_reg_set (T, 1);
-	
+
 	SC.accumulator         = 0;
 	SC.instruction_counter = 0;
 }
 
+/*
 void SimpleComputer_move (enum keys direction)
 {
 	int d_x = 0, d_y = 0;
@@ -173,29 +180,7 @@ void SimpleComputer_move (enum keys direction)
 	if (SC.cursor_y <  1) SC.cursor_y = 10;
 	if (SC.cursor_y > 10) SC.cursor_y =  1;
 }
-
-void SimpleComputer_ChangeCell ()
-{
-	int temp = 0;
-	printf ("Enter new value >> ");
-	scanf ("%d", &temp);
-	sc_memory_set ((SC.cursor_y - 1) * 10 + SC.cursor_x - 1, temp);
-	fflush (stdin);
-}
-
-void SimpleComputer_accumulator ()
-{
-	printf ("Enter new value of accumulator >> ");
-	scanf ("%d", &SC.accumulator);
-	fflush (stdin);
-}
-
-void SimpleComputer_instrCounter ()
-{
-	printf ("Enter new value of Instruction Counter >> ");
-	scanf ("%d", &SC.instruction_counter);
-	fflush (stdin);
-}
+*/
 
 void SimpleComputer_run ()
 {
@@ -237,7 +222,7 @@ void SimpleComputer_show ()
 
 	/* printing flags */
 
-	int SC_P, SC_O, SC_M, SC_T, SC_E;
+	int SC_P = 0, SC_O = 0, SC_M = 0, SC_T = 0, SC_E = 0;
 
 	sc_reg_get (P, &SC_P);
 	sc_reg_get (O, &SC_O);
@@ -245,11 +230,11 @@ void SimpleComputer_show ()
 	sc_reg_get (T, &SC_T);
 	sc_reg_get (E, &SC_T);
 
-	mt_gotoXY (68, 11); if (SC_P) printf ("P\n");
-	mt_gotoXY (70, 11); if (SC_O) printf ("O\n");
-	mt_gotoXY (72, 11); if (SC_M) printf ("M\n");
-	mt_gotoXY (74, 11); if (SC_T) printf ("T\n");
-	mt_gotoXY (76, 11); if (SC_E) printf ("E\n");
+	mt_gotoXY (68, 11); if (SC_P) printf ("P");
+	mt_gotoXY (70, 11); if (SC_O) printf ("O");
+	mt_gotoXY (72, 11); if (SC_M) printf ("M");
+	mt_gotoXY (74, 11); if (SC_T) printf ("T");
+	mt_gotoXY (76, 11); if (SC_E) printf ("E");
 
 	/* printing screen widget */
 
@@ -259,7 +244,7 @@ void SimpleComputer_show ()
 	/* printing screen's bigchars */
 
 	int temp = 0;
-	sc_memory_get ((SC.cursor_y - 1) * 10 + SC.cursor_x - 1, &temp);
+	sc_memory_get (SC.instruction_counter, &temp);
 
 	bc_print (bc_plus, 2,  14, white, blue);
 	bc_print (bc_num [temp / 1000 % 10], 11, 14, white, blue);
@@ -284,14 +269,28 @@ void SimpleComputer_show ()
 	printf ("\n");
 }
 
+void SimpleComputer_accumulator ()
+{
+	printf ("Enter new value of accumulator >> ");
+	scanf ("%d", &SC.accumulator);
+	fflush (stdin);
+}
+
+void SimpleComputer_instrCounter ()
+{
+	printf ("Enter new value of Instruction Counter >> ");
+	scanf ("%d", &SC.instruction_counter);
+	fflush (stdin);
+}
+
 void SimpleComputer_do ()
 {
 	enum keys K;
 	int key;
 	sc_reg_get (T, &key);
-	
+
 	rk_readkey (&K);
-	
+
 	switch (K) {
 		case rk_r:
 			SimpleComputer_run ();
@@ -301,21 +300,6 @@ void SimpleComputer_do ()
 			SimpleComputer_exit ();
 			break;
 
-		case rk_left:
-			SimpleComputer_move (rk_left);
-			break;
-
-		case rk_right:
-			SimpleComputer_move (rk_right);
-			break;
-
-		case rk_up:
-			SimpleComputer_move (rk_up);
-			break;
-
-		case rk_down:
-			SimpleComputer_move (rk_down);
-			break;
 	}
 
 	if (key == 0) return;
@@ -327,10 +311,6 @@ void SimpleComputer_do ()
 
 		case rk_s:
 			SimpleComputer_save  ();
-			break;
-
-		case rk_enter:
-			SimpleComputer_ChangeCell ();
 			break;
 
 		case rk_f5:
@@ -351,8 +331,9 @@ void instructionCounterAdd (int signo)
 {
 	int flag; sc_reg_get (T, &flag);
 	if (flag == 0) {
+		sc_CU ();
+		//SimpleComputer_show ();
 		SC.instruction_counter++;
-		SimpleComputer_show ();
 	}
 
 }
@@ -363,7 +344,7 @@ void SimpleComputer_runapp ()
 	signal (SIGALRM, instructionCounterAdd);
 	signal (SIGUSR1, SimpleComputer_reset);
 
-	nval.it_interval.tv_sec = 3;
+	nval.it_interval.tv_sec = 1;
 	nval.it_interval.tv_usec = 500;
 	nval.it_value.tv_sec = 1;
 	nval.it_value.tv_usec = 0;
@@ -372,7 +353,581 @@ void SimpleComputer_runapp ()
 
 	while (SC.should_close == 0) {
 		SimpleComputer_show ();
+		//sc_CU ();
 		SimpleComputer_do ();
 	}
-	
+}
+
+/*** Simple Computer Commands ***/
+
+/** input/output **/
+
+int sc_READ (int address)
+{
+	int temp = 0;
+	scanf ("%d", &temp);
+	if (temp > 0x7FFF) {
+		sc_reg_set (P, 1);
+		return 0;
+	} else {
+		sc_memory_set (address, temp);
+		return 1;
+	}
+}
+
+int sc_WRITE (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	printf ("%d", temp);
+	return 1;
+}
+
+/** load/store **/
+
+int sc_LOAD (int address)
+{
+	int temp = 0;
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = temp;
+	return 1;
+}
+
+int sc_STORE (int address)
+{
+	return sc_memory_set (address, SC.accumulator);
+}
+
+/** arithmetic **/
+
+int sc_ADD (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator += temp;
+
+	if (SC.accumulator > 0x7FFF)
+		sc_reg_set (P, 1);
+
+	return 1;
+}
+
+int sc_ADDC (int address)
+{
+	int temp1 = 0;
+	sc_memory_get (address, &temp1);
+
+	int temp2 = 0;
+	sc_memory_get (SC.accumulator, &temp2);
+
+	SC.accumulator = temp1 + temp2;
+
+	if (SC.accumulator > 0x7FFF)
+		sc_reg_set (P, 1);
+
+	return 1;
+}
+
+int sc_SUB (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator -= temp;
+	return 1;
+}
+
+int sc_SUBC (int address)
+{
+	int temp1 = 0;
+	sc_memory_get (address, &temp1);
+
+	int temp2 = 0;
+	sc_memory_get (SC.accumulator, &temp2);
+
+	SC.accumulator = temp1 - temp2;
+
+	return 1;
+}
+
+int sc_DIVIDE (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	if (temp != 0) {
+		SC.accumulator /= temp;
+		return 1;
+	} else {
+		sc_reg_set (O, 1);
+		return 0;
+	}
+}
+
+int sc_MUL (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator *= temp;
+	return 1;
+}
+
+int sc_NEG (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator = 1 + ~temp;
+}
+
+/** Leaps **/
+
+int sc_JUMP (int address)
+{
+	SC.instruction_counter = address;
+	return 1;
+}
+
+int sc_JNEG (int address)
+{
+	if (SC.accumulator < 0)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JZ (int address)
+{
+	if (SC.accumulator == 0)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JNS (int address)
+{
+	if (SC.accumulator > 0)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JC (int address)
+{
+	if (SC.accumulator > 0x7FFF)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JNC (int address)
+{
+	if (SC.accumulator < 0x7FFE)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JP (int address)
+{
+	if (SC.accumulator % 2 == 0)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+int sc_JNP (int address)
+{
+	if (SC.accumulator % 2 == 1)
+		return sc_JUMP (address);
+
+	return 1;
+}
+
+/** Stop **/
+
+int sc_HALT ( )
+{
+	SC.should_close = 1;
+	return 1;
+}
+
+/** Logic **/
+
+int sc_NOT (int address)
+{
+	return sc_memory_set (address, SC.accumulator == 0);
+}
+
+int sc_AND (int address)
+{
+	int temp = 0;
+
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = SC.accumulator && temp;
+
+	return 1;
+}
+
+int sc_OR  (int address)
+{
+	int temp = 0;
+
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = SC.accumulator || temp;
+
+	return 1;
+}
+
+int sc_XOR (int address)
+{
+	int temp = 0;
+
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = (SC.accumulator != 0) ^ (temp != 0);
+
+	return 1;
+}
+
+/** Logic and ciclyc shifts **/
+
+/* logic shift */
+int sc_CHL (int address)
+{
+	int temp = 0;
+
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = temp << SC.accumulator;
+
+	return 1;
+}
+
+int sc_SHR (int address)
+{
+	int temp = 0;
+
+	if (sc_memory_get (address, &temp) == 0) return 0;
+
+	SC.accumulator = temp >> SC.accumulator;
+
+	return 1;
+}
+
+/* Ciclyc shift */
+
+int sc_RCL (int address)
+{
+	int temp1 = 0;
+	if (sc_memory_get (address, &temp1) == 0) return 0;
+
+	int temp2 = 0;
+	if (sc_memory_get (SC.accumulator, &temp2) == 0) return 0;
+
+	SC.accumulator = (temp1 << temp2) | (temp1 >> (15 - temp2));
+
+	return 1;
+}
+
+int sc_RCR (int address)
+{
+	int temp1 = 0;
+	if (sc_memory_get (address, &temp1) == 0) return 0;
+
+	int temp2 = 0;
+	if (sc_memory_get (SC.accumulator, &temp2) == 0) return 0;
+
+	SC.accumulator = (temp1 >> temp2) | (temp1 << (15 - temp2));
+
+	return 1;
+}
+
+/* Logic value shift */
+
+int sc_LOGLC (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator = temp << SC.accumulator;
+
+	return 1;
+}
+
+int sc_LOGRC (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator = temp >> SC.accumulator;
+
+	return 1;
+}
+
+/*  Ciclyc value shift */
+
+int sc_RCCL (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator = (temp << SC.accumulator) | (temp >> (15 - SC.accumulator));
+
+	return 1;
+}
+
+int sc_RCCR (int address)
+{
+	int temp = 0;
+	sc_memory_get (address, &temp);
+
+	SC.accumulator = (temp >> SC.accumulator) | (temp << (15 - SC.accumulator));
+
+	return 1;
+}
+
+/** Replacing **/
+
+int sc_MOVA (int address)
+{
+	int source_val = 0;
+	if (sc_memory_get (address, &source_val) == 0) return 0;
+
+	if (sc_memory_set (SC.accumulator, source_val) == 0) return 0;
+
+	return 1;
+}
+
+int sc_MOVR (int address)
+{
+	int source_val = 0;
+	if (sc_memory_get (SC.accumulator, &source_val) == 0) return 0;
+
+	if (sc_memory_set (address, source_val) == 0) return 0;
+
+	return 1;
+}
+
+int sc_MOVCA (int address)
+{
+	int source_val = 0;
+	if (sc_memory_get (address, &source_val) == 0) return 0;
+
+	int dest_ptr = 0;
+	if (sc_memory_get (SC.accumulator, &dest_ptr) == 0) return 0;
+
+	int dest_add = 0;
+	if (sc_memory_get (dest_add, &dest_ptr) == 0) return 0;
+
+	return sc_memory_set (dest_add, source_val);
+}
+
+int sc_MOVCR (int address)
+{
+	int dest_add = 0;
+	if (sc_memory_get (address, &dest_add) == 0) return 0;
+
+	int source_add = 0;
+	if (sc_memory_get (SC.accumulator, &source_add) == 0) return 0;
+
+	int source_val = 0;
+	if (sc_memory_get (source_add, &source_add) == 0) return 0;
+
+	return sc_memory_set (dest_add, source_val);
+}
+
+/** Processor Units **/
+
+int sc_ALU (int command, int operand)
+{
+	switch (command) {
+		/* command 'ADD' */
+		case 30:
+			sc_ADD (operand);
+			break;
+
+		/* command 'SUB' */
+		case 31:
+			sc_SUB (operand);
+			break;
+
+		/* command 'DIVIDE' */
+		case 32:
+			sc_DIVIDE (operand);
+			break;
+
+		/* command 'MUL' */
+		case 33:
+			sc_MUL (operand);
+			break;
+
+		/* command 'NOT' */
+		case 51:
+			sc_NOT (operand);
+			break;
+
+		/* command 'AND' */
+		case 52:
+			sc_AND (operand);
+			break;
+
+		/* command 'OR' */
+		case 53:
+			sc_OR (operand);
+			break;
+
+		/* command 'XOR' */
+		case 54:
+			sc_XOR (operand);
+			break;
+
+		/* command 'CHL' */
+		case 60:
+			sc_CHL (operand);
+			break;
+
+		/* command 'SHR' */
+		case 61:
+			sc_SHR (operand);
+			break;
+
+		/* command 'RCL' */
+		case 62:
+			sc_RCL (operand);
+			break;
+
+		/* command 'RCR' */
+		case 63:
+			sc_RCR (operand);
+			break;
+
+		/* command 'NEG' */
+		case 64:
+			sc_NEG (operand);
+			break;
+
+		/* command 'ADDC' */
+		case 65:
+			sc_ADDC (operand);
+			break;
+
+		/* command 'SUBC' */
+		case 66:
+			sc_SUBC (operand);
+			break;
+
+		/* command 'LOGLC' */
+		case 67:
+			sc_LOGLC (operand);
+			break;
+
+		/* command 'LOGRC' */
+		case 68:
+			sc_LOGRC (operand);
+			break;
+
+		/* command 'RCCL' */
+		case 69:
+			sc_RCCL (operand);
+			break;
+
+		/* command 'RCCR' */
+		case 70:
+			sc_RCCR (operand);
+			break;
+	}
+}
+
+void sc_CU ( )
+{
+	int temp = 0;
+	sc_reg_get (T, &temp);
+	if (temp == 0) return;
+
+	int command = 0, operand = 0;
+	temp = 0;
+
+	if ((SC.instruction_counter < 0) || (SC.instruction_counter > 99)) {
+		sc_reg_set (M, 1);
+		return;
+	}
+	sc_memory_get (SC.instruction_counter, &temp);
+	sc_command_decode (temp, &command, &operand);
+
+	switch (command) {
+		/* command 'JUMP' */
+		case 40:
+			sc_JUMP (operand - 1);
+			break;
+
+		/* command 'JNEG' */
+		case 41:
+			sc_JNEG (operand - 1);
+			break;
+
+		/* command 'JZ' */
+		case 42:
+			sc_JZ (operand - 1);
+			break;
+
+        /* command 'HALT' */
+		case 43:
+			sc_HALT ();
+			break;
+
+		/* command 'JNS' */
+		case 55:
+			sc_JNS (operand - 1);
+			break;
+
+		/* command 'JC' */
+		case 56:
+			sc_JC (operand - 1);
+			break;
+
+		/* command 'JNC' */
+		case 57:
+			sc_JNC (operand - 1);
+			break;
+
+		/* command 'JP' */
+		case 58:
+			sc_JP (operand - 1);
+			break;
+
+		/* command 'JNP' */
+		case 59:
+			sc_JNP (operand - 1);
+			break;
+
+		/* command 'MOVA' */
+		case 71:
+			sc_MOVA (operand);
+			break;
+
+		/* command 'MOVR' */
+		case 72:
+			sc_MOVR (operand);
+			break;
+
+		/* command 'MOVCA' */
+		case 73:
+			sc_MOVCA (operand);
+			break;
+
+		/* command 'MOVCR' */
+		case 74:
+			sc_MOVCR (operand);
+			break;
+
+		default:
+			sc_ALU (command, operand);
+	}
 }
