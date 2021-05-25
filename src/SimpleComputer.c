@@ -325,10 +325,11 @@ void timer (int signo)
 	int temp = 0;
 	sc_reg_get (T, &temp);
 
-  SC.instruction_counter ++;
 
-	if (temp == 1) {
+
+	if (temp == 0) {
 		sc_CU ();
+    SC.instruction_counter++;
     SimpleComputer_show ();
   }
 }
