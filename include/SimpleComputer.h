@@ -17,6 +17,7 @@ struct SimpleComputer
 	int instruction_counter;
 
 	int should_close;
+	int to_update;
 };
 
 int SimpleComputer_init  ();

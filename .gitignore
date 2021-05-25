@@ -1,1 +1,8 @@
-build/*.o
+build/
+bin/
+
+external/SimpleAssembler/bin/
+external/SimpleAssembler/build/
+
+external/SimpleBasic/bin/
+external/SimpleBasic/build/

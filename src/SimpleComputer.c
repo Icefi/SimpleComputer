@@ -37,6 +37,8 @@ void SimpleComputer_print ()
 
 void SimpleComputer_load ()
 {
+	SC.instruction_counter = 0;
+
 	int cur; sc_reg_get (T, &cur);
 	sc_reg_set (T, 1);
 
@@ -61,7 +63,9 @@ void SimpleComputer_load ()
 }
 
 void SimpleComputer_save ()
-{
+{	
+	SC.instruction_counter = 0;
+
 	int cur; sc_reg_get (T, &cur);
 	sc_reg_set (T, 1);
 
@@ -121,6 +125,7 @@ int SimpleComputer_init ()
 	SC.accumulator         = 0;
 	SC.instruction_counter = 0;
 	SC.should_close        = 0;
+	SC.to_update           = 1;
 
 	return 1;
 }
@@ -202,32 +207,8 @@ void SimpleComputer_show ()
 	sc_reg_get (T, &SC_T);
 	sc_reg_get (E, &SC_T);
 
-	/*
 
-	mt_gotoXY (68, 11); if (SC_P) printf ("P");
-	mt_gotoXY (70, 11); if (SC_O) printf ("O");
-	mt_gotoXY (72, 11); if (SC_M) printf ("M");
-	mt_gotoXY (74, 11); if (SC_T) printf ("T");
-	mt_gotoXY (76, 11); if (SC_E) printf ("E");
-
-	*/
-
-	mt_gotoXY (68, 11);
-
-	if (SC_P) printf ("P ");
-	else printf (" ");
-
-	if (SC_O) printf ("O ");
-	else printf (" ");
-
-	if (SC_M) printf ("M ");
-	else printf (" ");
-
-	if (SC_T) printf ("T ");
-	else printf (" ");
-
-	if (SC_E) printf ("E");
-	else printf (" ");
+	mt_gotoXY (70, 11); printf ("%d %d %d %d %d", SC_P, SC_O, SC_M, SC_T, SC_E);
 
 	/* printing screen widget */
 
@@ -276,6 +257,12 @@ void SimpleComputer_instrCounter ()
 	fflush (stdin);
 }
 
+void SimpleComputer_step ()
+{
+	sc_CU ();
+	SC.instruction_counter ++;
+}
+
 void SimpleComputer_do ()
 {
 	enum keys K;
@@ -286,7 +273,11 @@ void SimpleComputer_do ()
 
 	switch (K) {
 		case rk_r:
-			SimpleComputer_run ();
+			SimpleComputer_run  ();
+			break;
+			
+		case rk_t:
+			SimpleComputer_step ();
 			break;
 
 		case rk_e:
@@ -318,6 +309,8 @@ void SimpleComputer_do ()
 			raise (SIGUSR1);
 			break;
 	}
+	
+	SimpleComputer_show ();
 }
 
 void timer (int signo)
@@ -325,13 +318,12 @@ void timer (int signo)
 	int temp = 0;
 	sc_reg_get (T, &temp);
 
-
-
 	if (temp == 0) {
 		sc_CU ();
-    SC.instruction_counter++;
-    SimpleComputer_show ();
-  }
+   		SC.instruction_counter++;
+   		SimpleComputer_show ();
+   		//SimpleComputer_do ();
+  	}
 }
 
 void SimpleComputer_runapp ()
@@ -346,11 +338,11 @@ void SimpleComputer_runapp ()
 	nval.it_value.tv_usec = 0;
 
 	setitimer (ITIMER_REAL, &nval, NULL);
-
+	
+	SimpleComputer_show ();
 	while (SC.should_close == 0) {
-		SimpleComputer_show ();
-		//sc_CU ();
-		SimpleComputer_do ();
+		//SimpleComputer_show ();
+		if (SC.to_update) SimpleComputer_do ();
 	}
 }
 
@@ -360,8 +352,20 @@ void SimpleComputer_runapp ()
 
 int sc_READ (int address)
 {
+	int upt;
+	sc_reg_get (T, &upt);
+	
+	SC.to_update = 0;
+	sc_reg_set (T, 1);
+	
 	int temp = 0;
+	printf ("INPUT >> ");
+	
 	scanf ("%d", &temp);
+	
+	SC.to_update = 1;
+	sc_reg_set (T, upt);
+	
 	if (temp > 0x7FFF) {
 		sc_reg_set (P, 1);
 		return 0;
@@ -548,7 +552,10 @@ int sc_JNP (int address)
 
 int sc_HALT ( )
 {
-	SC.should_close = 1;
+	
+	sc_reg_set (T, 1);
+	SC.instruction_counter = -1;
+	
 	return 1;
 }
 
@@ -855,6 +862,22 @@ void sc_CU ( )
 	sc_command_decode (temp, &command, &operand);
 
 	switch (command) {
+		case 10:
+			sc_READ (operand);
+			break;
+			
+		case 11:
+			sc_WRITE (operand);
+			break;
+			
+		case 20:
+			sc_LOAD (operand);
+			break;
+			
+		case 21:
+			sc_STORE (operand);
+			break;
+	
 		/* command 'JUMP' */
 		case 40:
 			sc_JUMP (operand - 1);

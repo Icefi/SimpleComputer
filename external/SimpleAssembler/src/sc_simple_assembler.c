@@ -172,5 +172,5 @@ void translate (const char* file_in, const char* file_out)
 
 	sc_memory_save (file_out);
 
-	printf ("File \"%s\" translated to \"%s\"", file_in, file_out);
+	printf ("File \"%s\" translated to \"%s\"\n", file_in, file_out);
 }
