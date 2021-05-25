@@ -152,35 +152,7 @@ void SimpleComputer_reset (int signo)
 	SC.instruction_counter = 0;
 }
 
-/*
-void SimpleComputer_move (enum keys direction)
-{
-	int d_x = 0, d_y = 0;
 
-	switch (direction) {
-		case rk_left:
-			d_x = -1;
-			break;
-		case rk_right:
-			d_x =  1;
-			break;
-		case rk_up:
-			d_y = -1;
-			break;
-		case rk_down:
-			d_y =  1;
-			break;
-	}
-
-	SC.cursor_x += d_x;
-	SC.cursor_y += d_y;
-
-	if (SC.cursor_x <  1) SC.cursor_x = 10;
-	if (SC.cursor_x > 10) SC.cursor_x =  1;
-	if (SC.cursor_y <  1) SC.cursor_y = 10;
-	if (SC.cursor_y > 10) SC.cursor_y =  1;
-}
-*/
 
 void SimpleComputer_run ()
 {
@@ -230,11 +202,32 @@ void SimpleComputer_show ()
 	sc_reg_get (T, &SC_T);
 	sc_reg_get (E, &SC_T);
 
+	/*
+
 	mt_gotoXY (68, 11); if (SC_P) printf ("P");
 	mt_gotoXY (70, 11); if (SC_O) printf ("O");
 	mt_gotoXY (72, 11); if (SC_M) printf ("M");
 	mt_gotoXY (74, 11); if (SC_T) printf ("T");
 	mt_gotoXY (76, 11); if (SC_E) printf ("E");
+
+	*/
+
+	mt_gotoXY (68, 11);
+
+	if (SC_P) printf ("P ");
+	else printf (" ");
+
+	if (SC_O) printf ("O ");
+	else printf (" ");
+
+	if (SC_M) printf ("M ");
+	else printf (" ");
+
+	if (SC_T) printf ("T ");
+	else printf (" ");
+
+	if (SC_E) printf ("E");
+	else printf (" ");
 
 	/* printing screen widget */
 
@@ -246,11 +239,11 @@ void SimpleComputer_show ()
 	int temp = 0;
 	sc_memory_get (SC.instruction_counter, &temp);
 
-	bc_print (bc_plus, 2,  14, white, blue);
-	bc_print (bc_num [temp / 1000 % 10], 11, 14, white, blue);
-	bc_print (bc_num [temp / 100 % 10], 20, 14, white, blue);
-	bc_print (bc_num [temp / 10 % 10], 29, 14, white, blue);
-	bc_print (bc_num [temp % 10], 38, 14, white, blue);
+	bc_print (bc_plus, 2,  14, red, blue);
+	bc_print (bc_num [temp / 1000 % 10], 11, 14, red, blue);
+	bc_print (bc_num [temp / 100 % 10], 20, 14, red, blue);
+	bc_print (bc_num [temp / 10 % 10], 29, 14, red, blue);
+	bc_print (bc_num [temp % 10], 38, 14, red, blue);
 
 	/* printing keys */
 
@@ -327,29 +320,31 @@ void SimpleComputer_do ()
 	}
 }
 
-void instructionCounterAdd (int signo)
+void timer (int signo)
 {
-	int flag; sc_reg_get (T, &flag);
-	if (flag == 0) {
-		sc_CU ();
-		//SimpleComputer_show ();
-		SC.instruction_counter++;
-	}
+	int temp = 0;
+	sc_reg_get (T, &temp);
 
+  SC.instruction_counter ++;
+
+	if (temp == 1) {
+		sc_CU ();
+    SimpleComputer_show ();
+  }
 }
 
 void SimpleComputer_runapp ()
 {
-	struct itimerval nval, oval;
-	signal (SIGALRM, instructionCounterAdd);
+	struct itimerval nval;
+	signal (SIGALRM, timer);
 	signal (SIGUSR1, SimpleComputer_reset);
 
-	nval.it_interval.tv_sec = 1;
-	nval.it_interval.tv_usec = 500;
+	nval.it_interval.tv_sec = 0;
+	nval.it_interval.tv_usec = 50000;
 	nval.it_value.tv_sec = 1;
 	nval.it_value.tv_usec = 0;
 
-	setitimer (ITIMER_REAL, &nval, &oval);
+	setitimer (ITIMER_REAL, &nval, NULL);
 
 	while (SC.should_close == 0) {
 		SimpleComputer_show ();
@@ -848,14 +843,11 @@ int sc_ALU (int command, int operand)
 void sc_CU ( )
 {
 	int temp = 0;
-	sc_reg_get (T, &temp);
-	if (temp == 0) return;
 
 	int command = 0, operand = 0;
-	temp = 0;
 
 	if ((SC.instruction_counter < 0) || (SC.instruction_counter > 99)) {
-		sc_reg_set (M, 1);
+		SC.instruction_counter = 0;
 		return;
 	}
 	sc_memory_get (SC.instruction_counter, &temp);

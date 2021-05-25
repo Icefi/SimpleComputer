@@ -185,6 +185,8 @@ AST * parser_func_def (Parser * psr, Scope * scp)
 
 AST * parser_var (Parser * psr, Scope * scp)
 {
+	char * var_name = psr -> cur_token -> value;
+
 	parser_eat (psr, TOKEN_ID);
 
 	if (psr -> cur_token -> type == TOKEN_LPAR)
@@ -192,7 +194,7 @@ AST * parser_var (Parser * psr, Scope * scp)
 
 	AST * var = ast_init (AST_VAR);
 
-	var -> var_name = psr -> cur_token -> value;
+	var -> var_name = var_name;
 	var -> scope = scp;
 
 	return var;
@@ -214,6 +216,27 @@ AST * parser_var_def (Parser * psr, Scope * scp)
 	var_def -> var_def_name = var_name;
 }
 
-AST * parser_parse_str (Parser * psr, Scope * scp);
+AST * parser_parse_str (Parser * psr, Scope * scp)
+{
+	AST * str = ast_init (AST_STR);
 
-AST * parser_parse_id (Parser * psr, Scope * scp);
+	str -> str_val = psr -> cur_token -> value;
+
+	parser_eat (psr, TOKEN_STR);
+
+	str -> scope -> scp;
+
+	return str;
+}
+
+AST * parser_parse_id  (Parser * psr, Scope * scp)
+{
+	if      (strcmp (psr -> cur_token -> value, "let") == 0)
+		return parser_var_def  (psr, scp);
+
+	else if (strcmp (psr -> cur_token -> value, "fn" ) == 0)
+		return parser_func_def (psr, scp);
+
+	else
+		return parser_var (psr, scp);
+}

@@ -1,19 +1,18 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "lexer.h"
+#include "parser.h"
+#include "visitor.h"
+#include "io.h"
+
+#define MAX_LIMIT 20
 
 int main (int argc, char** argv)
 {
-    Lexer * lexer = lexer_init (
-        "var name = \"Nik doe\";\n"
-        "print (name);"
-    );
+    char input [MAX_LIMIT];
 
-    Token * token = (void*)0;
-
-    while ((token = lexer_get_token (lexer)) != (void*)0) {
-        printf ("TOKEN (%d, %s);\n", token->type, token->value);
+    while (true) {
+    	printf ("Welcom to the new programming language v0.0.1!\n");
     }
-
-    return 0;
 }

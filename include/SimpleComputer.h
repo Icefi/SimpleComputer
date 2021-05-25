@@ -36,7 +36,7 @@ void SimpleComputer_do   ();
 void SimpleComputer_run ();
 
 void SimpleComputer_reset  (int signo);
-void instructionCounterAdd (int signo);
+void timer (int signo);
 
 void SimpleComputer_runapp ();
 
