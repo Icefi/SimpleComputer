@@ -157,8 +157,6 @@ void SimpleComputer_reset (int signo)
 	SC.instruction_counter = 0;
 }
 
-
-
 void SimpleComputer_run ()
 {
 	int key;
@@ -322,7 +320,6 @@ void timer (int signo)
 		sc_CU ();
    		SC.instruction_counter++;
    		SimpleComputer_show ();
-   		//SimpleComputer_do ();
   	}
 }
 
@@ -407,10 +404,14 @@ int sc_ADD (int address)
 	int temp = 0;
 	sc_memory_get (address, &temp);
 
-	SC.accumulator += temp;
+	temp = SC.accumulator + temp;
 
-	if (SC.accumulator > 0x7FFF)
+	if (temp > 0x7FFF) {
 		sc_reg_set (P, 1);
+		return 0;
+    }
+
+    SC.accumulator = temp;
 
 	return 1;
 }
@@ -423,10 +424,14 @@ int sc_ADDC (int address)
 	int temp2 = 0;
 	sc_memory_get (SC.accumulator, &temp2);
 
-	SC.accumulator = temp1 + temp2;
+	temp1 = temp1 + temp2;
 
-	if (SC.accumulator > 0x7FFF)
+	if (temp1 > 0x7FFF) {
 		sc_reg_set (P, 1);
+		return 0;
+	}
+
+	SC.accumulator = temp1;
 
 	return 1;
 }
@@ -436,7 +441,15 @@ int sc_SUB (int address)
 	int temp = 0;
 	sc_memory_get (address, &temp);
 
-	SC.accumulator -= temp;
+	temp = SC.accumulator - temp;
+
+	if (temp > 0x7FFF) {
+		sc_reg_set (P, 1);
+		return 0;
+    }
+
+    SC.accumulator = temp;
+
 	return 1;
 }
 
@@ -448,7 +461,14 @@ int sc_SUBC (int address)
 	int temp2 = 0;
 	sc_memory_get (SC.accumulator, &temp2);
 
-	SC.accumulator = temp1 - temp2;
+	temp1 = temp1 - temp2;
+
+	if (temp1 > 0x7FFF) {
+		sc_reg_set (P, 1);
+		return 0;
+    }
+
+    SC.accumulator = temp1;
 
 	return 1;
 }
@@ -458,13 +478,15 @@ int sc_DIVIDE (int address)
 	int temp = 0;
 	sc_memory_get (address, &temp);
 
-	if (temp != 0) {
-		SC.accumulator /= temp;
-		return 1;
-	} else {
+	if (temp == 0){
 		sc_reg_set (O, 1);
+		SC.should_close = 1;
 		return 0;
 	}
+
+	temp = SC.accumulator / temp;
+
+	return 1;
 }
 
 int sc_MUL (int address)
@@ -472,7 +494,15 @@ int sc_MUL (int address)
 	int temp = 0;
 	sc_memory_get (address, &temp);
 
-	SC.accumulator *= temp;
+	temp = SC.accumulator * temp;
+
+	if (temp > 0x7FFF) {
+		sc_reg_set (P, 1);
+		return 0;
+	}
+
+	SC.accumulator = temp;
+
 	return 1;
 }
 
@@ -608,7 +638,7 @@ int sc_CHL (int address)
 
 	if (sc_memory_get (address, &temp) == 0) return 0;
 
-	SC.accumulator = temp << SC.accumulator;
+	SC.accumulator = 0x7FFF & ( temp << SC.accumulator );
 
 	return 1;
 }
@@ -619,7 +649,7 @@ int sc_SHR (int address)
 
 	if (sc_memory_get (address, &temp) == 0) return 0;
 
-	SC.accumulator = temp >> SC.accumulator;
+	SC.accumulator = 0x7FFF & ( temp >> SC.accumulator );
 
 	return 1;
 }

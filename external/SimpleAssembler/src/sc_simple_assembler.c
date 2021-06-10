@@ -1,6 +1,6 @@
 #include "sc_simple_assembler.h"
 
-void decode (char* str)
+void encode (char* str)
 {
     char* istr = strtok (str, " ;\n");
 
@@ -59,6 +59,7 @@ void decode (char* str)
                 } else if (strcmp (istr, "HALT") == 0) {
                     code = 43;
 
+
 				/* Logic */
 
                 } else if (strcmp (istr, "NOT") == 0) {
@@ -69,6 +70,18 @@ void decode (char* str)
                     code = 53;
                 } else if (strcmp (istr, "XOR") == 0) {
                     code = 54;
+
+                /* New Jumps */
+                } else if (strcmp (istr, "JNS") == 0) {
+                    code = 55;
+                } else if (strcmp (istr, "JC")  == 0) {
+                    code = 56;
+                } else if (strcmp (istr, "JNC") == 0) {
+                    code = 57;
+                } else if (strcmp (istr, "JP")  == 0) {
+                    code = 58;
+                } else if (strcmp (istr, "JNP") == 0) {
+                    code = 59;
 
 				/* Shifts */
 
@@ -163,7 +176,7 @@ void translate (const char* file_in, const char* file_out)
     for (int i = 0; ; i++) {
         if (fgets (buf, STR_SIZE, fin) == NULL) break;
 
-        decode (buf);
+        encode (buf);
     }
 
     fclose (fin);

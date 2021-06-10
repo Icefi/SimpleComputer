@@ -9,7 +9,7 @@
 
 #define STR_SIZE 50
 
-void decode    (char*);
+void encode    (char*);
 void translate (const char*, const char*);
 
 #endif
